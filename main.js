@@ -130,10 +130,6 @@ async function main() {
     }
 }
 
-main();
-// (async () => {
-//
-// })();
 
 /**
  * Log in to account
@@ -157,3 +153,6 @@ async function authorise(page, login, password) {
         throw new Error("Wrong login or password")
     }
 }
+
+
+main();
