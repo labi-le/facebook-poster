@@ -1,8 +1,10 @@
-// require('dotenv').config()
+// require('dotenv').config() for debug
+
 const puppeteer = require('puppeteer');
 
 const business = require('./businessPosting');
 const personal = require('./personalPosting');
+const fs = require("fs");
 
 
 /**
@@ -71,18 +73,23 @@ const PASSWORD = process.env.FB_PASSWORD ?? (() => {
 })();
 
 /**
- * Password
+ * Attachments
  * @type {string}
  */
-const POST_TEXT = process.env.FB_POST_TEXT ?? (() => {
-    throw new Error("Text for post is incorrect")
-})();
+const POST_ATTACHMENT = ((attachment) => {
+    if (fs.existsSync(attachment)) {
+        return attachment
+    } else {
+        throw new Error("File does not exist")
+    }
+})(process.env.FB_POST_ATTACHMENT);
 
 
 async function main() {
     const browser = await puppeteer.launch({
-        headless: true,
-        args: ['--no-sandbox']
+        headless: false,
+        args: ['--no-sandbox'],
+        // slowMo: 70
     });
 
     try {
@@ -108,7 +115,7 @@ async function main() {
          */
         if (ACCOUNT_TYPE === PERSONAL_ACCOUNT) {
             await page.goto(SITE + "/" + PERSONAL_ACCOUNT_LINK);
-            await personal.createPost(page, POST_TEXT)
+            await personal.createPost(page,[POST_ATTACHMENT])
         }
 
         /**
@@ -116,20 +123,15 @@ async function main() {
          */
         if (ACCOUNT_TYPE === BUSINESS_ACCOUNT) {
             await page.goto(SITE + "/" + BUSINESS_ACCOUNT_LINK);
-            await business.createPost(page, POST_TEXT)
+            await business.createPost(page, [POST_ATTACHMENT])
         }
 
     } catch (error) {
         console.error(error);
     } finally {
-
-        //wait for published or error
-        await new Promise(r => setTimeout(r, 5000));
-
         await browser.close()
     }
 }
-
 
 /**
  * Log in to account
@@ -148,11 +150,10 @@ async function authorise(page, login, password) {
 
     let profileButton = "/html/body/div[1]/div/div[1]/div/div[2]/div[4]/div[1]/span/div/div[1]/img"
     try {
-        await page.waitForXPath(profileButton, {timeout: 20000})
+        await page.waitForXPath(profileButton, {timeout: 30000})
     } catch {
         throw new Error("Wrong login or password")
     }
 }
-
 
 main();
